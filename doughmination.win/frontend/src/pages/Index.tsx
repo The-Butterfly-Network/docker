@@ -354,6 +354,7 @@ export default function Index() {
             {loggedIn ? (
               <>
                 {isAdmin && (
+                  <>
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/admin/dashboard" className="font-comic">
                       Admin Panel
@@ -364,6 +365,7 @@ export default function Index() {
                       Status Manager
                     </Link>
                   </Button>
+                  </>
                 )}
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/admin/user" className="font-comic">
