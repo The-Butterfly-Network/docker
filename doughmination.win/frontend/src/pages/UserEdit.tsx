@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import useTheme from '@/hooks/useTheme';
 
 interface UserData {
   id: number;
@@ -16,6 +17,7 @@ interface UserData {
 }
 
 export default function UserEdit() {
+  const [theme] = useTheme();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');

@@ -1,6 +1,7 @@
 // AdminDashboard.tsx - Enhanced with mental state management and back button
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import useTheme from '@/hooks/useTheme';
 
 interface Member {
   id: string;
@@ -35,6 +36,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ fronting, onFrontingChanged }) => {
+  const [theme] = useTheme();
   const [newFront, setNewFront] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);

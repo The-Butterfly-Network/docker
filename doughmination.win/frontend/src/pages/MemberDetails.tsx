@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import useTheme from '@/hooks/useTheme';
 
 interface Member {
   id: number;
@@ -24,6 +25,7 @@ interface MemberDetailsProps {
 }
 
 export default function MemberDetails({ members = [], defaultAvatar }: MemberDetailsProps) {
+  const [theme] = useTheme();
   const { member_id } = useParams<{ member_id: string }>();
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);

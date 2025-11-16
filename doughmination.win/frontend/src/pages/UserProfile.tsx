@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import useTheme from '@/hooks/useTheme';
 
 interface UserData {
   id: number;
@@ -14,6 +15,7 @@ interface UserData {
 }
 
 export default function UserProfile() {
+  const [theme] = useTheme();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

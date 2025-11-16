@@ -1,6 +1,7 @@
 // Login.tsx with Cloudflare Turnstile and Welcome Message
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import useTheme from '@/hooks/useTheme';
 
 interface LoginProps {
   onLogin?: () => void;
@@ -25,6 +26,7 @@ declare global {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [theme] = useTheme();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

@@ -1,7 +1,9 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import useTheme from '@/hooks/useTheme';
 
 const NotFound = () => {
+  const [theme] = useTheme();
   const location = useLocation();
 
   useEffect(() => {
