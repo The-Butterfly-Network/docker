@@ -37,6 +37,10 @@ from models import (
 )
 from users import get_users, create_user, delete_user, initialize_admin_user, update_user, get_user_by_id
 from metrics import get_fronting_time_metrics, get_switch_frequency_metrics
+from member_status import (
+    get_member_status, set_member_status, clear_member_status,
+    enrich_members_with_status, initialize_status_storage
+)
 
 # ============================================================================
 # APPLICATION SETUP
@@ -50,6 +54,9 @@ initialize_admin_user()
 
 # Initialize sub-systems
 initialize_default_subsystems()
+
+# Initialize member status storage
+initialize_status_storage()
 
 # Default fallback avatar URL
 DEFAULT_AVATAR = "https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png"
@@ -405,7 +412,7 @@ async def members(
     subsystem: Optional[str] = None,
     include_untagged: bool = True
 ):
-    """Get members, optionally filtered by sub-system"""
+    """Get members, optionally filtered by sub-system, with status information"""
     try:
         if subsystem:
             # Validate subsystem parameter
@@ -417,7 +424,13 @@ async def members(
                     detail=f"Invalid subsystem. Valid options: {', '.join(valid_labels)}"
                 )
         
-        return await get_members(subsystem, include_untagged)
+        # Get members with subsystem filter
+        members_data = await get_members(subsystem, include_untagged)
+        
+        # Enrich with status information
+        members_with_status = enrich_members_with_status(members_data)
+        
+        return members_with_status
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
@@ -1093,6 +1106,88 @@ async def admin_refresh(user = Depends(get_current_user)):
         return {"success": True, "message": "Refresh broadcast sent"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to broadcast refresh: {str(e)}")
+
+# ============================================================================
+# MEMBER STATUS ENDPOINTS
+# ============================================================================
+@app.get("/api/members/{member_identifier}/status")
+async def get_member_status_endpoint(member_identifier: str):
+    """Get status for a specific member (public endpoint)"""
+    try:
+        status = get_member_status(member_identifier)
+        
+        if status:
+            return {
+                "success": True,
+                "member_identifier": member_identifier,
+                "status": status
+            }
+        else:
+            return {
+                "success": True,
+                "member_identifier": member_identifier,
+                "status": None
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch member status: {str(e)}")
+
+@app.post("/api/members/{member_identifier}/status")
+async def set_member_status_endpoint(
+    member_identifier: str,
+    status_data: Dict[str, Any] = Body(...),
+    user = Depends(get_current_user)
+):
+    """Set or update status for a member (admin only)"""
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    
+    try:
+        status_text = status_data.get("text")
+        emoji = status_data.get("emoji")
+        
+        if not status_text:
+            raise HTTPException(status_code=400, detail="Status text is required")
+        
+        # Validate status text length
+        if len(status_text) > 100:
+            raise HTTPException(status_code=400, detail="Status text must be 100 characters or less")
+        
+        status = set_member_status(member_identifier, status_text, emoji)
+        
+        return {
+            "success": True,
+            "message": f"Status updated for {member_identifier}",
+            "status": status
+        }
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to set member status: {str(e)}")
+
+@app.delete("/api/members/{member_identifier}/status")
+async def clear_member_status_endpoint(
+    member_identifier: str,
+    user = Depends(get_current_user)
+):
+    """Clear status for a member (admin only)"""
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    
+    try:
+        success = clear_member_status(member_identifier)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Status cleared for {member_identifier}"
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"No status found for {member_identifier}"
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear member status: {str(e)}")
 
 # ============================================================================
 # DYNAMIC EMBEDS ENDPOINTS

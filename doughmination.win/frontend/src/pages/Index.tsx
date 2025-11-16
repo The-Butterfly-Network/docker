@@ -359,6 +359,11 @@ export default function Index() {
                       Admin Panel
                     </Link>
                   </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/admin/status" className="font-comic">
+                      Status Manager
+                    </Link>
+                  </Button>
                 )}
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/admin/user" className="font-comic">

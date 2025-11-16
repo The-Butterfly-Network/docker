@@ -11,6 +11,7 @@ import UserProfile from "./pages/UserProfile";
 import MemberDetails from "./pages/MemberDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UserEdit from "./pages/UserEdit";
+import StatusManager from "./pages/StatusManager";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,11 @@ const App = () => (
           <Route path="/admin/dashboard" element={
             <ProtectedRoute adminRequired={true}>
               <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/status" element={
+            <ProtectedRoute adminRequired={true}>
+              <StatusManager />
             </ProtectedRoute>
           } />
           <Route path="/admin/user" element={
