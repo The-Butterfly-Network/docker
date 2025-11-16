@@ -39,8 +39,10 @@ export default function MemberDetails({ members = [], defaultAvatar }: MemberDet
         return;
       }
 
-      // First try to find member in props
-      const foundMember = members.find(m => m.name.toLowerCase() === member_id.toLowerCase());
+      const foundMember = members.find(
+        m => m.name.toLowerCase() === member_id.toLowerCase()
+      )
+
       if (foundMember) {
         setMember(foundMember);
         setLoading(false);
@@ -64,7 +66,7 @@ export default function MemberDetails({ members = [], defaultAvatar }: MemberDet
     };
 
     fetchMemberData();
-  }, [member_id, members]);
+  }, [member_id]);
 
   if (loading) {
     return (
