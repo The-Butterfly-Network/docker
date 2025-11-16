@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import useTheme from '@/hooks/useTheme';
 
 interface Member {
   id: string;
@@ -26,6 +27,7 @@ const EMOJI_SUGGESTIONS = [
 ];
 
 export default function StatusManager() {
+  const [theme] = useTheme()
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<string>('');
   const [statusText, setStatusText] = useState('');
