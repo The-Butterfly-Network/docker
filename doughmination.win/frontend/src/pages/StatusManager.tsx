@@ -20,7 +20,6 @@ interface Member {
   } | null;
 }
 
-// Common emoji suggestions
 const EMOJI_SUGGESTIONS = [
   '💤', '🎮', '📚', '🎨', '🎵', '💻', '🌙', '☀️', 
   '🍕', '☕', '🎬', '✨', '💭', '😴', '🏃', '🧘'
@@ -41,7 +40,6 @@ export default function StatusManager() {
   }, []);
 
   useEffect(() => {
-    // When a member is selected, load their current status
     if (selectedMember) {
       const member = members.find(m => m.name === selectedMember);
       if (member?.status) {
@@ -64,21 +62,18 @@ export default function StatusManager() {
 
     try {
       const response = await fetch('/api/members', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
         const data = await response.json();
-        // Filter out cofronts and special members, sort alphabetically
         const regularMembers = data
           .filter((m: Member) => !m.is_cofront && !m.is_special)
-          .sort((a: Member, b: Member) => {
-            const nameA = (a.display_name || a.name).toLowerCase();
-            const nameB = (b.display_name || b.name).toLowerCase();
-            return nameA.localeCompare(nameB);
-          });
+          .sort((a: Member, b: Member) =>
+            (a.display_name || a.name).toLowerCase()
+              .localeCompare((b.display_name || b.name).toLowerCase())
+          );
+
         setMembers(regularMembers);
       } else {
         setMessage({ type: 'error', content: 'Failed to fetch members' });
@@ -105,15 +100,12 @@ export default function StatusManager() {
     }
 
     if (statusText.length > 100) {
-      setMessage({ type: 'error', content: 'Status text must be 100 characters or less' });
+      setMessage({ type: 'error', content: 'Status must be ≤ 100 chars' });
       return;
     }
 
     const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage({ type: 'error', content: 'Authentication required' });
-      return;
-    }
+    if (!token) return setMessage({ type: 'error', content: 'Authentication required' });
 
     setSaving(true);
     setMessage(null);
@@ -136,16 +128,10 @@ export default function StatusManager() {
         throw new Error(errorData.detail || 'Failed to update status');
       }
 
-      setMessage({ type: 'success', content: 'Status updated successfully!' });
-      
-      // Refresh members to get updated status
+      setMessage({ type: 'success', content: 'Status updated!' });
       await fetchMembers();
     } catch (err: any) {
-      console.error('Status update error:', err);
-      setMessage({ 
-        type: 'error', 
-        content: err.message || 'Failed to update status' 
-      });
+      setMessage({ type: 'error', content: err.message });
     } finally {
       setSaving(false);
     }
@@ -158,14 +144,9 @@ export default function StatusManager() {
     }
 
     const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage({ type: 'error', content: 'Authentication required' });
-      return;
-    }
+    if (!token) return setMessage({ type: 'error', content: 'Authentication required' });
 
-    if (!window.confirm(`Clear status for ${members.find(m => m.name === selectedMember)?.display_name || selectedMember}?`)) {
-      return;
-    }
+    if (!window.confirm(`Clear status for ${selectedMember}?`)) return;
 
     setSaving(true);
     setMessage(null);
@@ -173,9 +154,7 @@ export default function StatusManager() {
     try {
       const response = await fetch(`/api/members/${selectedMember}/status`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (!response.ok) {
@@ -185,16 +164,10 @@ export default function StatusManager() {
 
       setStatusText('');
       setEmoji('');
-      setMessage({ type: 'success', content: 'Status cleared successfully!' });
-      
-      // Refresh members to get updated status
+      setMessage({ type: 'success', content: 'Status cleared!' });
       await fetchMembers();
     } catch (err: any) {
-      console.error('Status clear error:', err);
-      setMessage({ 
-        type: 'error', 
-        content: err.message || 'Failed to clear status' 
-      });
+      setMessage({ type: 'error', content: err.message });
     } finally {
       setSaving(false);
     }
@@ -216,63 +189,59 @@ export default function StatusManager() {
   return (
     <div className="container mx-auto p-6 pt-20">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold font-comic">Status Manager</h1>
-            <p className="text-muted-foreground font-comic">
-              Update member status messages
-            </p>
+            <p className="text-muted-foreground font-comic">Update member status messages</p>
           </div>
           <Button variant="outline" asChild>
-            <Link to="/admin/dashboard" className="font-comic">
-              Back to Dashboard
-            </Link>
+            <Link to="/admin/dashboard" className="font-comic">Back to Dashboard</Link>
           </Button>
         </div>
 
-        {/* Messages */}
         {message && (
           <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
             <AlertDescription>{message.content}</AlertDescription>
           </Alert>
         )}
 
-        {/* Status Form */}
         <Card>
           <CardHeader>
             <CardTitle className="font-comic">Update Status</CardTitle>
-            <CardDescription className="font-comic">
-              Select a member and set their status message
-            </CardDescription>
+            <CardDescription className="font-comic">Select a member and set their status</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Member Selection */}
+
+              {/* MEMBER SELECT */}
               <div className="space-y-2">
-                <Label htmlFor="member-select" className="font-comic">
-                  Select Member
-                </Label>
-                <Select value={selectedMember} onValueChange={setSelectedMember}>
+                <Label htmlFor="member-select" className="font-comic">Select Member</Label>
+
+                {/* ⭐ FIXED: Added name="member" here */}
+                <Select
+                  name="member"
+                  value={selectedMember}
+                  onValueChange={setSelectedMember}
+                >
                   <SelectTrigger id="member-select" className="font-comic">
                     <SelectValue placeholder="Choose a member..." />
                   </SelectTrigger>
+
                   <SelectContent>
                     {members.map((member) => (
                       <SelectItem key={member.id} value={member.name} className="font-comic">
                         <div className="flex items-center gap-2">
                           {member.avatar_url && (
                             <img 
-                              src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'} 
+                              src={member.avatar_url}
                               alt={member.display_name || member.name}
                               className="w-6 h-6 rounded-full object-cover"
                             />
                           )}
                           <span>{member.display_name || member.name}</span>
                           {member.status && (
-                            <span className="text-xs text-muted-foreground">
-                              (has status)
-                            </span>
+                            <span className="text-xs text-muted-foreground">(has status)</span>
                           )}
                         </div>
                       </SelectItem>
@@ -281,48 +250,50 @@ export default function StatusManager() {
                 </Select>
               </div>
 
-              {/* Only show status fields if member is selected */}
               {selectedMember && (
                 <>
-                  {/* Emoji Selection */}
+                  {/* EMOJI */}
                   <div className="space-y-2">
-                    <Label htmlFor="emoji" className="font-comic">
+                    <Label className="font-comic">
                       Emoji (optional)
-                    </Label>
-                    <div className="flex gap-2 items-center">
-                      <Input
-                        id="emoji"
-                        type="text"
-                        value={emoji}
-                        onChange={(e) => setEmoji(e.target.value.slice(0, 2))}
-                        placeholder="😊"
-                        className="w-20 text-center text-2xl font-comic"
-                        maxLength={2}
-                      />
-                      <div className="flex flex-wrap gap-1">
-                        {EMOJI_SUGGESTIONS.map((emojiSuggestion) => (
-                          <button
-                            key={emojiSuggestion}
-                            type="button"
-                            onClick={() => setEmoji(emojiSuggestion)}
-                            className="w-8 h-8 text-xl hover:bg-accent rounded transition-colors"
-                          >
-                            {emojiSuggestion}
-                          </button>
-                        ))}
+
+                      <div className="flex gap-2 items-center mt-2">
+                        <Input
+                          id="emoji"
+                          type="text"
+                          value={emoji}
+                          onChange={(e) => setEmoji(e.target.value.slice(0, 2))}
+                          placeholder="😊"
+                          className="w-20 text-center text-2xl font-comic"
+                          maxLength={2}
+                        />
+
+                        <div className="flex flex-wrap gap-1">
+                          {EMOJI_SUGGESTIONS.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setEmoji(s)}
+                              aria-label={`Select emoji ${s}`}
+                              className="w-8 h-8 text-xl hover:bg-accent rounded transition-colors"
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </Label>
                   </div>
 
-                  {/* Status Text */}
+                  {/* STATUS TEXT */}
                   <div className="space-y-2">
-                    <Label htmlFor="statusText" className="font-comic">
-                      Status Text
-                    </Label>
+                    <Label htmlFor="statusText" className="font-comic">Status Text</Label>
+
                     <div className="space-y-1">
                       <Input
                         id="statusText"
                         type="text"
+                        name="statusText"    // optional, but helps autofill
                         value={statusText}
                         onChange={(e) => setStatusText(e.target.value)}
                         placeholder="What's happening?"
@@ -335,7 +306,7 @@ export default function StatusManager() {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
+                  {/* BUTTONS */}
                   <div className="flex gap-2">
                     <Button
                       type="submit"
@@ -344,6 +315,7 @@ export default function StatusManager() {
                     >
                       {saving ? 'Updating...' : 'Update Status'}
                     </Button>
+
                     {getCurrentStatus() && (
                       <Button
                         type="button"
@@ -357,16 +329,18 @@ export default function StatusManager() {
                     )}
                   </div>
 
-                  {/* Current Status Display */}
+                  {/* CURRENT STATUS */}
                   {getCurrentStatus() && (
                     <div className="mt-4 p-3 bg-muted rounded-lg border border-border">
                       <p className="text-xs text-muted-foreground font-comic mb-1">Current Status:</p>
+
                       <div className="flex items-center gap-2">
-                        {getCurrentStatus()!.emoji && (
-                          <span className="text-xl">{getCurrentStatus()!.emoji}</span>
+                        {getCurrentStatus()?.emoji && (
+                          <span className="text-xl">{getCurrentStatus()?.emoji}</span>
                         )}
-                        <p className="font-comic text-sm">{getCurrentStatus()!.text}</p>
+                        <p className="font-comic text-sm">{getCurrentStatus()?.text}</p>
                       </div>
+
                       <p className="text-xs text-muted-foreground font-comic mt-1">
                         Updated {new Date(getCurrentStatus()!.updated_at).toLocaleString()}
                       </p>
@@ -378,38 +352,42 @@ export default function StatusManager() {
           </CardContent>
         </Card>
 
-        {/* Members with Status */}
+        {/* MEMBERS WITH STATUS */}
         <Card>
           <CardHeader>
             <CardTitle className="font-comic">Members with Active Status</CardTitle>
             <CardDescription className="font-comic">
-              Currently {members.filter(m => m.status).length} member(s) have status set
+              {members.filter(m => m.status).length} member(s) have status set
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             {members.filter(m => m.status).length > 0 ? (
               <div className="space-y-3">
                 {members.filter(m => m.status).map((member) => (
-                  <div 
-                    key={member.id} 
-                    className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border hover:border-primary transition-colors cursor-pointer"
+                  <div
+                    key={member.id}
                     onClick={() => setSelectedMember(member.name)}
+                    className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border hover:border-primary transition-colors cursor-pointer"
                   >
                     {member.avatar_url && (
-                      <img 
-                        src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'} 
+                      <img
+                        src={member.avatar_url}
                         alt={member.display_name || member.name}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     )}
+
                     <div className="flex-1 min-w-0">
                       <p className="font-comic font-semibold text-sm">
                         {member.display_name || member.name}
                       </p>
+
                       <div className="flex items-center gap-2 mt-1">
                         {member.status?.emoji && (
                           <span className="text-sm">{member.status.emoji}</span>
                         )}
+
                         <p className="text-xs text-muted-foreground font-comic truncate">
                           {member.status?.text}
                         </p>
@@ -425,6 +403,7 @@ export default function StatusManager() {
             )}
           </CardContent>
         </Card>
+
       </div>
     </div>
   );

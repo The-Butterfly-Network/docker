@@ -353,11 +353,11 @@ export default function UserEdit() {
             <form onSubmit={handleProfileUpdate} className="space-y-6">
               {/* Avatar Upload */}
               <div className="space-y-4">
-                <Label className="font-comic">Avatar</Label>
+                <Label htmlFor="avatarUpload" className="font-comic">Avatar</Label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     {avatarPreview && !imageError ? (
-                      <img 
+                      <img
                         src={avatarPreview}
                         alt="Avatar preview"
                         className="w-20 h-20 rounded-full object-cover border-2 border-border"
@@ -406,6 +406,7 @@ export default function UserEdit() {
                     )}
                   </div>
                   <input
+                    id="avatarUpload"
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
