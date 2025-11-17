@@ -1,6 +1,7 @@
 import "@/eggs/partyMode";
 import "@/eggs/nyanMode";
 import "@/eggs/pills";
+import "@/eggs/butterflyMode"
 
 // Welcome in console
 console.log(`
