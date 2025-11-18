@@ -2,6 +2,9 @@ import "@/eggs/partyMode";
 import "@/eggs/nyanMode";
 import "@/eggs/matrix";
 import "@/eggs/butterflyMode"
+// import "@/eggs/maraudersMap";
+import "@/eggs/relic";
+import "@/eggs/spike";
 
 // Welcome in console
 console.log(`

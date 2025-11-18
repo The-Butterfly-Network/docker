@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 package-lock.json
+
+# Experimental files
+src/eggs/maraudersMap.ts
+src/eggs/bdLink.ts

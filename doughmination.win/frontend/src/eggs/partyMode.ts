@@ -71,8 +71,8 @@ Back to normal!
 })();
 
 // Add rainbow animation + confetti styling
-const style = document.createElement("style");
-style.textContent = `
+const partyStyle = document.createElement("style");
+partyStyle.textContent = `
 @keyframes rainbow {
   0% { filter: hue-rotate(0deg); }
   100% { filter: hue-rotate(360deg); }
@@ -96,4 +96,4 @@ style.textContent = `
   }
 }
 `;
-document.head.appendChild(style);
+document.head.appendChild(partyStyle);

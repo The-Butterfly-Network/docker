@@ -296,8 +296,8 @@
   };
 
   // CSS STYLES
-  const style = document.createElement('style');
-  style.textContent = `
+  const matrixStyle = document.createElement('style');
+  matrixStyle.textContent = `
 /* WHITE RABBIT */
 .white-rabbit {
   position: fixed;
@@ -670,6 +670,6 @@
   100% { transform: skewX(0deg); }
 }
 `;
-  document.head.appendChild(style);
+  document.head.appendChild(matrixStyle);
 
 })();
