@@ -34,7 +34,7 @@ const About = () => {
       name: "The Butterfly Network",
       url: `${window.location.origin}`,
       sameAs: [
-        "https://github.com/The-Butterfly-Network"
+        "https://github.com/CloveTwilight3"
       ]
     });
     document.head.appendChild(ld);

@@ -5,13 +5,14 @@ import "@/eggs/butterflyMode"
 // import "@/eggs/maraudersMap";
 import "@/eggs/relic";
 import "@/eggs/spike";
+import "@/eggs/sudoMode";
 
 // Welcome in console
 console.log(`
 %cWelcome to the Doughmination System®!
 
 %c🎨 Looking for easter eggs? You never know where they are! :D
-%c💼 Interested in the code? Check out our GitHub: https://github.com/The-Butterfly-Network/docker
+%c💼 Interested in the code? Check out our GitHub: https://github.com/CloveTwilight3/docker
 %c🦋 Part of the Butterfly Network: https://www.butterfly-network.win
 
 `, 

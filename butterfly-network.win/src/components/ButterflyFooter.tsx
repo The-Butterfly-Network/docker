@@ -23,7 +23,7 @@ const ButterflyFooter = () => {
               type="button"
               className="flex items-center gap-2 text-muted-foreground hover:text-[hsl(var(--neon-green))] transition-colors"
               aria-label="Visit The Butterfly Network on GitHub"
-              onClick={() => window.open("https://github.com/The-Butterfly-Network", "_blank", "noopener,noreferrer")}
+              onClick={() => window.open("https://github.com/CloveTwilight3", "_blank", "noopener,noreferrer")}
             >
               <Github size={20} />
               <span className="text-sm">GitHub</span>
