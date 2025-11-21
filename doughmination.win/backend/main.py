@@ -23,17 +23,14 @@ from jose import JWTError
 from dotenv import load_dotenv
 
 # Local imports
-from pluralkit import get_system, get_members, get_fronters, set_front, create_dynamic_cofront, MAX_FRONTERS
+from pluralkit import get_system, get_members, get_fronters, set_front
 from auth import router as auth_router, get_current_user, oauth2_scheme
-from subsystems import (
-    get_subsystems, get_member_tags, get_members_by_subsystem, 
-    update_member_tags, add_member_tag, remove_member_tag,
-    initialize_default_subsystems
+from tags import (
+    get_member_tags, update_member_tags, add_member_tag, remove_member_tag,
+    enrich_members_with_tags, initialize_default_tags
 )
 from models import (
-    UserCreate, UserResponse, UserUpdate, MentalState, DynamicCofrontCreate, 
-    CofrontResponse, MultiSwitchRequest, MultiSwitchResponse, SubSystem, 
-    MemberTag, SubSystemFilter
+    UserCreate, UserResponse, UserUpdate, MentalState
 )
 from users import get_users, create_user, delete_user, initialize_admin_user, update_user, get_user_by_id
 from metrics import get_fronting_time_metrics, get_switch_frequency_metrics
@@ -52,8 +49,8 @@ app = FastAPI()
 # Initialize the admin user if no users exist
 initialize_admin_user()
 
-# Initialize sub-systems
-initialize_default_subsystems()
+# Initialize tags
+initialize_default_tags()
 
 # Initialize member status storage
 initialize_status_storage()
@@ -321,10 +318,6 @@ async def broadcast_member_update(members_data: list):
     """Broadcast member list changes"""
     await broadcast_frontend_update("members_update", {"members": members_data})
 
-async def broadcast_cofront_update(cofront_data: dict):
-    """Broadcast when a new dynamic cofront is created or updated"""
-    await broadcast_frontend_update("cofront_update", cofront_data)
-
 # ============================================================================
 # MENTAL STATE API ENDPOINTS
 # ============================================================================
@@ -408,27 +401,17 @@ async def system_info():
         raise HTTPException(status_code=500, detail=f"Failed to fetch system info: {str(e)}")
 
 @app.get("/api/members")
-async def members(
-    subsystem: Optional[str] = None,
-    include_untagged: bool = True
-):
-    """Get members, optionally filtered by sub-system, with status information"""
+async def members():
+    """Get members with tags and status information"""
     try:
-        if subsystem:
-            # Validate subsystem parameter
-            subsystems = get_subsystems()
-            valid_labels = [s.label for s in subsystems] + ["host", "untagged"]
-            if subsystem not in valid_labels:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Invalid subsystem. Valid options: {', '.join(valid_labels)}"
-                )
+        # Get members
+        members_data = await get_members()
         
-        # Get members with subsystem filter
-        members_data = await get_members(subsystem, include_untagged)
+        # Enrich with tags
+        members_with_tags = enrich_members_with_tags(members_data)
         
         # Enrich with status information
-        members_with_status = enrich_members_with_status(members_data)
+        members_with_status = enrich_members_with_status(members_with_tags)
         
         return members_with_status
     except HTTPException as http_exc:
@@ -439,7 +422,14 @@ async def members(
 @app.get("/api/fronters")
 async def fronters():
     try:
-        return await get_fronters()
+        fronters_data = await get_fronters()
+        
+        # Enrich fronters with tags and status
+        if "members" in fronters_data:
+            members_with_tags = enrich_members_with_tags(fronters_data["members"])
+            fronters_data["members"] = enrich_members_with_status(members_with_tags)
+        
+        return fronters_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch fronters: {str(e)}")
 
@@ -449,7 +439,10 @@ async def member_detail(member_id: str):
         members = await get_members()
         for member in members:
             if member["id"] == member_id or member["name"].lower() == member_id.lower():
-                return member
+                # Enrich with tags and status
+                member_with_tags = enrich_members_with_tags([member])[0]
+                member_with_status = enrich_members_with_status([member_with_tags])[0]
+                return member_with_status
         raise HTTPException(status_code=404, detail="Member not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch member details: {str(e)}")
@@ -466,13 +459,6 @@ async def switch_front(request: Request, user = Depends(get_current_user)):
 
         if not isinstance(member_ids, list):
             raise HTTPException(status_code=400, detail="'members' must be a list of member IDs")
-            
-        # Enforce maximum number of fronters
-        if len(member_ids) > MAX_FRONTERS:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Cannot have more than {MAX_FRONTERS} members fronting at once"
-            )
 
         await set_front(member_ids)
         
@@ -524,13 +510,6 @@ async def switch_multiple_fronters(
         
         if not isinstance(member_ids, list):
             raise HTTPException(status_code=400, detail="'member_ids' must be a list")
-            
-        # Enforce maximum number of fronters
-        if len(member_ids) > MAX_FRONTERS:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Cannot have more than {MAX_FRONTERS} members fronting at once"
-            )
         
         # Get the members to show their names in the response
         all_members = await get_members()
@@ -564,138 +543,8 @@ async def switch_multiple_fronters(
         raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================================================
-# COFRONT API ENDPOINTS
+# MEMBER TAGS API ENDPOINTS
 # ============================================================================
-
-@app.post("/api/dynamic_cofront")
-async def create_custom_cofront(
-    data: Dict[str, Any] = Body(...),
-    user = Depends(get_current_user)
-):
-    """Create a dynamic cofront from selected members"""
-    try:
-        member_ids = data.get("member_ids", [])
-        custom_name = data.get("name")
-        
-        if not member_ids or len(member_ids) < 2:
-            raise HTTPException(status_code=400, detail="At least 2 members are required for a cofront")
-            
-        if len(member_ids) > MAX_FRONTERS:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Cannot have more than {MAX_FRONTERS} members in a cofront"
-            )
-        
-        # Create the dynamic cofront
-        cofront_data = await create_dynamic_cofront(member_ids, custom_name)
-        
-        # Set this cofront as the current fronter
-        if data.get("set_as_current", False):
-            # We'll use the member IDs directly here
-            await set_front(member_ids)
-            
-            # Broadcast the fronting update
-            fronters_data = await get_fronters()
-            await broadcast_fronting_update(fronters_data)
-        
-        # Broadcast the cofront creation/update
-        await broadcast_cofront_update({
-            "action": "created",
-            "cofront": cofront_data
-        })
-        
-        return {
-            "status": "success", 
-            "message": "Dynamic cofront created successfully",
-            "cofront": cofront_data
-        }
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/cofronts")
-async def get_available_cofronts(user = Depends(get_current_user)):
-    """Get all available predefined cofronts"""
-    try:
-        # Get all members
-        members = await get_members()
-        
-        # Filter to only get cofronts
-        cofronts = [m for m in members if m.get("is_cofront")]
-        
-        return {
-            "status": "success",
-            "cofronts": cofronts
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============================================================================
-# SUB-SYSTEM API ENDPOINTS
-# ============================================================================
-
-@app.get("/api/subsystems")
-async def list_subsystems():
-    """Get all available sub-systems"""
-    try:
-        subsystems = get_subsystems()
-        return {
-            "status": "success",
-            "subsystems": [subsystem.dict() for subsystem in subsystems]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch sub-systems: {str(e)}")
-
-@app.get("/api/members/by-subsystem")
-async def members_by_subsystem():
-    """Get members grouped by their sub-systems"""
-    try:
-        # Get all members without filtering
-        all_members = await get_members()
-        
-        # Group by sub-system
-        grouped_members = get_members_by_subsystem(all_members)
-        
-        return {
-            "status": "success",
-            "subsystems": grouped_members
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to group members by sub-system: {str(e)}")
-
-@app.get("/api/members/filtered")
-async def members_filtered(
-    subsystem: Optional[str] = None,
-    include_untagged: bool = True
-):
-    """Get members filtered by sub-system"""
-    try:
-        # Validate subsystem parameter
-        if subsystem:
-            subsystems = get_subsystems()
-            valid_labels = [s.label for s in subsystems] + ["host", "untagged"]
-            if subsystem not in valid_labels:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Invalid subsystem. Valid options: {', '.join(valid_labels)}"
-                )
-        
-        # Get filtered members
-        members = await get_members(subsystem, include_untagged)
-        
-        return {
-            "status": "success",
-            "members": members,
-            "filter": {
-                "subsystem": subsystem,
-                "include_untagged": include_untagged
-            }
-        }
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch filtered members: {str(e)}")
 
 @app.get("/api/member-tags")
 async def list_member_tags(user = Depends(get_current_user)):

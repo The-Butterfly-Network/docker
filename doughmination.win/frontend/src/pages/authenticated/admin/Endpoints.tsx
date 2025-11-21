@@ -69,20 +69,9 @@ const Endpoints: React.FC = () => {
       ]
     },
     {
-      name: 'Cofronts',
-      icon: '🤝',
-      endpoints: [
-        { method: 'POST', path: '/api/dynamic_cofront', description: 'Create dynamic cofront from selected members', auth: 'user' },
-        { method: 'GET', path: '/api/cofronts', description: 'Get all available predefined cofronts', auth: 'user' },
-      ]
-    },
-    {
-      name: 'Sub-systems & Tags',
+      name: 'Tags',
       icon: '🏷️',
       endpoints: [
-        { method: 'GET', path: '/api/subsystems', description: 'Get all available sub-systems', auth: 'none' },
-        { method: 'GET', path: '/api/members/by-subsystem', description: 'Get members grouped by sub-systems', auth: 'none' },
-        { method: 'GET', path: '/api/members/filtered', description: 'Get members filtered by sub-system', auth: 'none' },
         { method: 'GET', path: '/api/member-tags', description: 'Get all member tag assignments', auth: 'admin' },
         { method: 'POST', path: '/api/member-tags/{member_identifier}', description: 'Update complete tag list for member', auth: 'admin' },
         { method: 'POST', path: '/api/member-tags/{member_identifier}/add', description: 'Add single tag to member', auth: 'admin' },

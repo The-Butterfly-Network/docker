@@ -13,15 +13,6 @@ interface Member {
   avatar_url?: string;
   pronouns?: string;
   tags?: string[];
-  is_private: boolean;
-  is_cofront: boolean;
-  is_special: boolean;
-  original_name?: string;
-  _isFromCofront?: boolean;
-  _cofrontName?: string;
-  _cofrontDisplayName?: string;
-  component_avatars?: string[];
-  component_members?: Member[];
   status?: {
     text: string;
     emoji?: string;
@@ -62,7 +53,7 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentSubSystemFilter, setCurrentSubSystemFilter] = useState<string | null>(null);
+  const [currentTagFilter, setCurrentTagFilter] = useState<string | null>(null);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
@@ -328,15 +319,15 @@ export default function Index() {
     setSearchQuery('');
   }, []);
 
-  const handleSubSystemFilterChange = useCallback((filter: string | null) => {
-    setCurrentSubSystemFilter(filter);
+  const handleTagFilterChange = useCallback((filter: string | null) => {
+    setCurrentTagFilter(filter);
   }, []);
 
   const toggleMenu = useCallback(() => {
     setMenuOpen(prev => !prev);
   }, []);
 
-  // Filter members based on search and subsystem filter
+  // Filter members based on search and tag filter
   useEffect(() => {
     let filtered = members;
 
@@ -348,19 +339,19 @@ export default function Index() {
       );
     }
 
-    // Apply subsystem filter
-    if (currentSubSystemFilter) {
-      if (currentSubSystemFilter === 'untagged') {
+    // Apply tag filter
+    if (currentTagFilter) {
+      if (currentTagFilter === 'untagged') {
         filtered = filtered.filter(member => !member.tags || member.tags.length === 0);
       } else {
         filtered = filtered.filter(member => 
-          member.tags?.includes(currentSubSystemFilter)
+          member.tags?.includes(currentTagFilter)
         );
       }
     }
 
     setFilteredMembers(filtered);
-  }, [members, searchQuery, currentSubSystemFilter]);
+  }, [members, searchQuery, currentTagFilter]);
 
   // Check if a member is currently fronting
   const isMemberFronting = useCallback((memberId: number, memberName: string): boolean => {
@@ -369,15 +360,7 @@ export default function Index() {
     }
 
     // Check direct fronting
-    if (fronting.members.some(m => m.id === memberId || m.name === memberName)) {
-      return true;
-    }
-
-    // Check if member is part of a cofront
-    return fronting.members.some(m => 
-      m.is_cofront && 
-      m.component_members?.some(cm => cm.id === memberId || cm.name === memberName)
-    );
+    return fronting.members.some(m => m.id === memberId || m.name === memberName);
   }, [fronting]);
 
   // Mental state helper functions
@@ -401,36 +384,6 @@ export default function Index() {
       'highly at risk': '⛔'
     };
     return icons[level] || '❓';
-  };
-
-  /**
-   * Expands cofront members into their individual component members for display
-   */
-  const expandFrontingMembers = (frontingMembers: Member[]) => {
-    if (!frontingMembers || !Array.isArray(frontingMembers)) {
-      return [];
-    }
-
-    const expandedMembers: Member[] = [];
-
-    frontingMembers.forEach(member => {
-      if (member.is_cofront && member.component_members && member.component_members.length > 0) {
-        // This is a cofront - expand it into individual component members
-        member.component_members.forEach(componentMember => {
-          expandedMembers.push({
-            ...componentMember,
-            _isFromCofront: true,
-            _cofrontName: member.name,
-            _cofrontDisplayName: member.display_name || member.name
-          });
-        });
-      } else {
-        // Regular member - add as-is
-        expandedMembers.push(member);
-      }
-    });
-
-    return expandedMembers;
   };
 
   if (loading) {
@@ -643,94 +596,65 @@ export default function Index() {
                 {/* Currently Fronting Section */}
                 {fronting && fronting.members && fronting.members.length > 0 && (
                   <div className="mb-6 p-4 border-b border-border">
-                    {(() => {
-                      const expandedMembers = expandFrontingMembers(fronting.members);
-                      
-                      return (
-                        <>
-                          <h2 className="text-xl font-comic mb-3 text-center">
-                            Currently {expandedMembers.length > 1 ? 'Co-fronting' : 'Fronting'}
-                          </h2>
-                          <div className="flex flex-wrap gap-4 justify-center">
-                            {expandedMembers.map((member, index) => (
-                              <div key={member.id || `${member.name}-${index}`} className="flex flex-col items-center relative">
-                                {/* Status Bubble - Thought Bubble Style */}
-                                {member.status && (
-                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
-                                    <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[140px]">
-                                      <div className="flex items-center gap-1.5">
-                                        {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
-                                        <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
-                                      </div>
-                                      {/* Thought bubble circles */}
-                                      <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
-                                        <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
-                                        <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                                <Link to={`/${member.name}`}>
-                                  <div className="relative">
-                                    <img
-                                      src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
-                                      alt={member.display_name || member.name}
-                                      className="w-16 h-16 rounded-full object-cover border-2 border-border hover:border-primary transition-colors cursor-pointer"
-                                      loading="lazy"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
-                                      }}
-                                    />
-                                  </div>
-                                </Link>
-                                <div className="mt-2 text-center max-w-[120px]">
-                                  <Link 
-                                    to={`/${member.name}`}
-                                    className="font-comic font-semibold text-sm text-primary hover:text-primary/80 transition-colors block"
-                                  >
-                                    {member.display_name || member.name || "Unknown"}
-                                  </Link>
-                                  
-                                  {member.tags && member.tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-1 justify-center">
-                                      {[...member.tags].sort((a, b) => a.localeCompare(b)).map((tag, tagIndex) => (
-                                        <span
-                                          key={tagIndex}
-                                          className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-comic"
-                                        >
-                                          {tag}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                  
-                                  {member._isFromCofront && (
-                                    <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-blue-500 text-white font-comic">
-                                      {member._cofrontDisplayName}
-                                    </span>
-                                  )}
-                                  
-                                  {member.is_special && (
-                                    <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500 text-white font-comic">
-                                      {member.original_name === "system" ? "Unsure" : "Sleeping"}
-                                    </span>
-                                  )}
+                    <h2 className="text-xl font-comic mb-3 text-center">
+                      Currently {fronting.members.length > 1 ? 'Co-fronting' : 'Fronting'}
+                    </h2>
+                    <div className="flex flex-wrap gap-4 justify-center">
+                      {fronting.members.map((member, index) => (
+                        <div key={member.id || `${member.name}-${index}`} className="flex flex-col items-center relative">
+                          {/* Status Bubble - Thought Bubble Style */}
+                          {member.status && (
+                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                              <div className="relative bg-card border-2 border-border rounded-2xl px-3 py-1.5 shadow-lg max-w-[140px]">
+                                <div className="flex items-center gap-1.5">
+                                  {member.status.emoji && <span className="text-sm">{member.status.emoji}</span>}
+                                  <span className="text-xs font-comic text-foreground truncate">{member.status.text}</span>
+                                </div>
+                                {/* Thought bubble circles */}
+                                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1">
+                                  <div className="w-2 h-2 bg-card border border-border rounded-full"></div>
+                                  <div className="w-1.5 h-1.5 bg-card border border-border rounded-full"></div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                          
-                          {fronting.members.some(m => m.is_cofront) && (
-                            <div className="mt-3 text-sm text-muted-foreground text-center font-comic">
-                              {fronting.members
-                                .filter(m => m.is_cofront)
-                                .map(cofront => `${cofront.display_name || cofront.name} (${cofront.component_members?.length || 0} members)`)
-                                .join(', ')} currently co-fronting
                             </div>
                           )}
-                        </>
-                      );
-                    })()}
+                          <Link to={`/${member.name}`}>
+                            <div className="relative">
+                              <img
+                                src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
+                                alt={member.display_name || member.name}
+                                className="w-16 h-16 rounded-full object-cover border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                                loading="lazy"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
+                                }}
+                              />
+                            </div>
+                          </Link>
+                          <div className="mt-2 text-center max-w-[120px]">
+                            <Link 
+                              to={`/${member.name}`}
+                              className="font-comic font-semibold text-sm text-primary hover:text-primary/80 transition-colors block"
+                            >
+                              {member.display_name || member.name || "Unknown"}
+                            </Link>
+                            
+                            {member.tags && member.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1 justify-center">
+                                {[...member.tags].sort((a, b) => a.localeCompare(b)).map((tag, tagIndex) => (
+                                  <span
+                                    key={tagIndex}
+                                    className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-comic"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 
@@ -738,23 +662,23 @@ export default function Index() {
                 <div className="mb-6 space-y-4">
                   <div className="flex flex-wrap gap-2 justify-center">
                     <button
-                      onClick={() => handleSubSystemFilterChange(null)}
-                      className={`filter-button ${currentSubSystemFilter === null ? 'active' : ''}`}
+                      onClick={() => handleTagFilterChange(null)}
+                      className={`filter-button ${currentTagFilter === null ? 'active' : ''}`}
                     >
                       All Members
                     </button>
                     {availableTags.map((tag) => (
                       <button
                         key={tag}
-                        onClick={() => handleSubSystemFilterChange(tag)}
-                        className={`filter-button ${currentSubSystemFilter === tag ? 'active' : ''}`}
+                        onClick={() => handleTagFilterChange(tag)}
+                        className={`filter-button ${currentTagFilter === tag ? 'active' : ''}`}
                       >
                         {tag}
                       </button>
                     ))}
                     <button
-                      onClick={() => handleSubSystemFilterChange('untagged')}
-                      className={`filter-button ${currentSubSystemFilter === 'untagged' ? 'active' : ''}`}
+                      onClick={() => handleTagFilterChange('untagged')}
+                      className={`filter-button ${currentTagFilter === 'untagged' ? 'active' : ''}`}
                     >
                       Untagged
                     </button>
@@ -790,9 +714,7 @@ export default function Index() {
                 {/* Members Grid */}
                 {filteredMembers.length > 0 ? (
                   <div className="member-grid" style={{ paddingTop: '3rem' }}>
-                    {filteredMembers
-                      .filter(member => !member.is_private && !member.is_cofront && !member.is_special)
-                      .map((member) => {
+                    {filteredMembers.map((member) => {
                         const isFronting = isMemberFronting(member.id, member.name);
                         return (
                           <div key={member.id} className={`member-grid-item ${isFronting ? 'fronting-glow' : ''} relative`}>
@@ -859,23 +781,23 @@ export default function Index() {
                 ) : (
                   <div className="text-center py-8">
                     <p className="font-comic text-lg text-muted-foreground">
-                      {searchQuery || currentSubSystemFilter 
+                      {searchQuery || currentTagFilter 
                         ? 'No members found matching your criteria.' 
                         : 'No members available.'
                       }
                     </p>
-                    {(searchQuery || currentSubSystemFilter) && (
+                    {(searchQuery || currentTagFilter) && (
                       <div className="mt-4 flex gap-2 justify-center">
                         {searchQuery && (
                           <Button variant="secondary" size="sm" onClick={clearSearch} className="font-comic">
                             Clear search
                           </Button>
                         )}
-                        {currentSubSystemFilter && (
+                        {currentTagFilter && (
                           <Button 
                             variant="secondary" 
                             size="sm" 
-                            onClick={() => setCurrentSubSystemFilter(null)}
+                            onClick={() => setCurrentTagFilter(null)}
                             className="font-comic"
                           >
                             Clear filter

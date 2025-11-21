@@ -15,9 +15,6 @@ interface Member {
   pronouns?: string;
   description?: string;
   tags?: string[];
-  is_private: boolean;
-  is_cofront: boolean;
-  is_special: boolean;
   status?: {
     text: string;
     emoji?: string;

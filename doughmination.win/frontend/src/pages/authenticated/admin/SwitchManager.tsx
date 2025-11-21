@@ -47,7 +47,6 @@ const SwitchManager: React.FC = () => {
       if (membersRes.ok) {
         const membersData = await membersRes.json();
         const regularMembers = membersData
-          .filter((m: Member) => !m.is_cofront && !m.is_special)
           .sort((a: Member, b: Member) =>
             (a.display_name || a.name).toLowerCase()
               .localeCompare((b.display_name || b.name).toLowerCase())
@@ -61,9 +60,7 @@ const SwitchManager: React.FC = () => {
         
         // Pre-populate selected members with current fronters
         const fronterIds = new Set(
-          frontersData.members
-            ?.filter(m => !m.is_cofront && !m.is_special)
-            .map(m => m.id) || []
+          frontersData.members?.map(m => m.id) || []
         );
         setSelectedMembers(fronterIds);
       }
@@ -81,11 +78,6 @@ const SwitchManager: React.FC = () => {
     if (newSelected.has(memberId)) {
       newSelected.delete(memberId);
     } else {
-      // Check if we're at max fronters (6)
-      if (newSelected.size >= 6) {
-        setMessage({ type: 'error', content: 'Maximum 6 members can front at once' });
-        return;
-      }
       newSelected.add(memberId);
     }
     
@@ -140,7 +132,7 @@ const SwitchManager: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    const allMemberIds = new Set(filteredMembers.slice(0, 6).map(m => m.id));
+    const allMemberIds = new Set(filteredMembers.map(m => m.id));
     setSelectedMembers(allMemberIds);
   };
 
@@ -163,11 +155,7 @@ const SwitchManager: React.FC = () => {
 
   const hasChanges = () => {
     // Compare current fronters with selected members
-    const currentIds = new Set(
-      currentFronters
-        .filter(m => !m.is_cofront && !m.is_special)
-        .map(m => m.id)
-    );
+    const currentIds = new Set(currentFronters.map(m => m.id));
     
     if (currentIds.size !== selectedMembers.size) return true;
     
@@ -229,7 +217,7 @@ const SwitchManager: React.FC = () => {
                     className="font-comic"
                     disabled={filteredMembers.length === 0}
                   >
-                    Select First 6
+                    Select All
                   </Button>
                   <Button
                     variant="outline"
@@ -241,7 +229,7 @@ const SwitchManager: React.FC = () => {
                     Clear All
                   </Button>
                   <div className="ml-auto text-sm text-muted-foreground font-comic flex items-center">
-                    {selectedMembers.size} / 6 selected
+                    {selectedMembers.size} selected
                   </div>
                 </div>
               </CardContent>
@@ -252,7 +240,7 @@ const SwitchManager: React.FC = () => {
               <CardHeader>
                 <CardTitle className="font-comic">Select Members</CardTitle>
                 <CardDescription className="font-comic">
-                  Choose up to 6 members to front
+                  Choose members to front
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -344,23 +332,21 @@ const SwitchManager: React.FC = () => {
               <CardContent>
                 {currentFronters.length > 0 ? (
                   <div className="space-y-2">
-                    {currentFronters
-                      .filter(m => !m.is_cofront && !m.is_special)
-                      .map((member) => (
-                        <div key={member.id} className="flex items-center gap-2">
-                          <img
-                            src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
-                            alt={member.display_name || member.name}
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
-                            }}
-                          />
-                          <span className="font-comic text-sm">
-                            {member.display_name || member.name}
-                          </span>
-                        </div>
-                      ))}
+                    {currentFronters.map((member) => (
+                      <div key={member.id} className="flex items-center gap-2">
+                        <img
+                          src={member.avatar_url || 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png'}
+                          alt={member.display_name || member.name}
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://www.yuri-lover.win/cdn/pfp/fallback_avatar.png';
+                          }}
+                        />
+                        <span className="font-comic text-sm">
+                          {member.display_name || member.name}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground font-comic text-center py-4">

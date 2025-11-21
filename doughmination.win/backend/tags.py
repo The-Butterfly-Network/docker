@@ -1,19 +1,14 @@
 import json
 import os
-from typing import List, Dict, Optional, Set
-from models import SubSystem, MemberTag
+from typing import List, Dict
 from pathlib import Path
 
 # Define data directory
 DATA_DIR = Path("dough-data")
-SUBSYSTEMS_FILE = DATA_DIR / "subsystems.json"
 MEMBER_TAGS_FILE = DATA_DIR / "member_tags.json"
 
 # Ensure data directory exists
 DATA_DIR.mkdir(exist_ok=True)
-
-# Default sub-systems configuration
-DEFAULT_SUBSYSTEMS = []
 
 # Default member tag assignments
 DEFAULT_MEMBER_TAGS = {
@@ -80,23 +75,6 @@ DEFAULT_MEMBER_TAGS = {
 }
 
 
-def get_subsystems() -> List[SubSystem]:
-    """Get all defined sub-systems"""
-    if not os.path.exists(SUBSYSTEMS_FILE):
-        # Create default subsystems file
-        save_subsystems(DEFAULT_SUBSYSTEMS)
-        return [SubSystem(**subsystem) for subsystem in DEFAULT_SUBSYSTEMS]
-    
-    with open(SUBSYSTEMS_FILE, "r") as f:
-        subsystems_data = json.load(f)
-    
-    return [SubSystem(**subsystem) for subsystem in subsystems_data]
-
-def save_subsystems(subsystems_data: List[Dict]):
-    """Save sub-systems to file"""
-    with open(SUBSYSTEMS_FILE, "w") as f:
-        json.dump(subsystems_data, f, indent=2)
-
 def get_member_tags() -> Dict[str, List[str]]:
     """Get member tag assignments"""
     if not os.path.exists(MEMBER_TAGS_FILE):
@@ -156,67 +134,6 @@ def remove_member_tag(member_identifier: str, tag: str) -> bool:
     
     return False
 
-def filter_members_by_subsystem(members: List[Dict], subsystem_filter: Optional[str] = None, include_untagged: bool = True) -> List[Dict]:
-    """Filter members by sub-system tag"""
-    if not subsystem_filter:
-        return members
-    
-    member_tags = get_member_tags()
-    filtered_members = []
-    
-    for member in members:
-        member_name = member.get("name", "")
-        member_id = member.get("id", "")
-        
-        # Get tags for this member
-        tags = get_member_tags_by_id(member_id, member_name)
-        
-        # Check if member should be included
-        if subsystem_filter in tags:
-            # Add tags to member data for frontend use
-            member_with_tags = {**member, "tags": tags}
-            filtered_members.append(member_with_tags)
-        elif include_untagged and not tags:
-            # Include untagged members if requested
-            member_with_tags = {**member, "tags": []}
-            filtered_members.append(member_with_tags)
-    
-    return filtered_members
-
-def get_members_by_subsystem(members: List[Dict]) -> Dict[str, List[Dict]]:
-    """Group members by their sub-systems"""
-    member_tags = get_member_tags()
-    subsystems = get_subsystems()
-    
-    # Initialize result with all subsystems
-    result = {}
-    for subsystem in subsystems:
-        result[subsystem.label] = []
-    result["untagged"] = []
-    
-    for member in members:
-        member_name = member.get("name", "")
-        member_id = member.get("id", "")
-        
-        # Get tags for this member
-        tags = get_member_tags_by_id(member_id, member_name)
-        member_with_tags = {**member, "tags": tags}
-        
-        if not tags:
-            result["untagged"].append(member_with_tags)
-        else:
-            # Add member to each subsystem they belong to
-            for tag in tags:
-                if tag in result:
-                    result[tag].append(member_with_tags)
-                elif tag == "host":
-                    # Special handling for host tag - could create a separate category or add to untagged
-                    if "host" not in result:
-                        result["host"] = []
-                    result["host"].append(member_with_tags)
-    
-    return result
-
 def enrich_members_with_tags(members: List[Dict]) -> List[Dict]:
     """Add tag information to all members"""
     enriched_members = []
@@ -234,18 +151,8 @@ def enrich_members_with_tags(members: List[Dict]) -> List[Dict]:
     
     return enriched_members
 
-def validate_subsystem_tag(tag: str) -> bool:
-    """Check if a tag corresponds to a valid sub-system"""
-    subsystems = get_subsystems()
-    valid_tags = [s.label for s in subsystems] + ["host"]  # Allow "host" as special tag
-    return tag in valid_tags
-
-def initialize_default_subsystems():
-    """Initialize default sub-systems and member tags if they don't exist"""
-    if not os.path.exists(SUBSYSTEMS_FILE):
-        save_subsystems(DEFAULT_SUBSYSTEMS)
-        print("Initialized default sub-systems: Pets, Valorant, Vocaloids")
-    
+def initialize_default_tags():
+    """Initialize default member tags if they don't exist"""
     if not os.path.exists(MEMBER_TAGS_FILE):
         save_member_tags(DEFAULT_MEMBER_TAGS)
         print("Initialized default member tags")
