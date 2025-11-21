@@ -1189,16 +1189,20 @@ async def clear_member_status_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to clear member status: {str(e)}")
 
+# =============================================================================
+# ROOT ENDPOINT
+# =============================================================================
+@app.get("/")
+async def serve_root():
+    """Serve the main frontend application"""
+    return FileResponse(STATIC_DIR / "index.html"))
+
 # ============================================================================
 # DYNAMIC EMBEDS ENDPOINTS
 # ============================================================================
 @app.get("/{member_name}")
 async def serve_member_page(member_name: str, request: Request):
     """Serve member page with dynamic meta tags for crawlers"""
-
-    # Handle root path
-    if not member_name or member_name == "":
-        return FileResponse(STATIC_DIR / "index.html")
     
     # Skip non-member routes
     skip_routes = ['api', 'admin', 'assets', 'avatars', 'favicon.ico', 
