@@ -1195,7 +1195,7 @@ async def clear_member_status_endpoint(
 @app.get("/")
 async def serve_root():
     """Serve the main frontend application"""
-    return FileResponse(STATIC_DIR / "index.html"))
+    return FileResponse(STATIC_DIR / "index.html")
 
 # ============================================================================
 # DYNAMIC EMBEDS ENDPOINTS
