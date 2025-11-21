@@ -161,12 +161,12 @@ export default function Index() {
         
         setMembers(sortedMembers);
         
-        // Extract unique tags
+        // Extract unique tags and sort alphabetically
         const tags = new Set<string>();
         sortedMembers.forEach((member: Member) => {
           member.tags?.forEach(tag => tags.add(tag));
         });
-        setAvailableTags(Array.from(tags));
+        setAvailableTags(Array.from(tags).sort((a, b) => a.localeCompare(b)));
       }
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -574,7 +574,7 @@ export default function Index() {
                                   
                                   {member.tags && member.tags.length > 0 && (
                                     <div className="flex flex-wrap gap-1 mt-1 justify-center">
-                                      {member.tags.map((tag, tagIndex) => (
+                                      {[...member.tags].sort((a, b) => a.localeCompare(b)).map((tag, tagIndex) => (
                                         <span
                                           key={tagIndex}
                                           className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-comic"
@@ -716,7 +716,7 @@ export default function Index() {
                                 
                                 {member.tags && member.tags.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-2 justify-center">
-                                    {member.tags.slice(0, 2).map((tag, index) => (
+                                    {[...member.tags].sort((a, b) => a.localeCompare(b)).slice(0, 2).map((tag, index) => (
                                       <span
                                         key={index}
                                         className="text-xs px-2 py-1 rounded-full font-comic bg-secondary text-secondary-foreground"
