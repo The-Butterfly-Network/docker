@@ -65,6 +65,120 @@ export default function Index() {
   const [currentSubSystemFilter, setCurrentSubSystemFilter] = useState<string | null>(null);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [wsConnected, setWsConnected] = useState(false);
+
+  // WebSocket connection
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let heartbeatInterval: NodeJS.Timeout | null = null;
+
+    const connectWebSocket = () => {
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        
+        console.log('Connecting to WebSocket:', wsUrl);
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          setWsConnected(true);
+          
+          // Send heartbeat every 30 seconds
+          heartbeatInterval = setInterval(() => {
+            if (ws?.readyState === WebSocket.OPEN) {
+              ws.send('ping');
+            }
+          }, 30000);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            console.log('WebSocket message received:', message);
+
+            switch (message.type) {
+              case 'fronting_update':
+                console.log('Fronting update received');
+                setFronting(message.data);
+                break;
+
+              case 'mental_state_update':
+                console.log('Mental state update received');
+                setSystemInfo(prev => prev ? { ...prev, mental_state: message.data } : null);
+                break;
+
+              case 'members_update':
+                console.log('Members update received');
+                if (message.data?.members) {
+                  const sortedMembers = [...message.data.members].sort((a: Member, b: Member) => {
+                    const nameA = (a.display_name || a.name).toLowerCase();
+                    const nameB = (b.display_name || b.name).toLowerCase();
+                    return nameA.localeCompare(nameB);
+                  });
+                  setMembers(sortedMembers);
+                  
+                  // Update tags
+                  const tags = new Set<string>();
+                  sortedMembers.forEach((member: Member) => {
+                    member.tags?.forEach(tag => tags.add(tag));
+                  });
+                  setAvailableTags(Array.from(tags).sort((a, b) => a.localeCompare(b)));
+                }
+                break;
+
+              case 'force_refresh':
+                console.log('Force refresh received from admin');
+                window.location.reload();
+                break;
+
+              default:
+                console.log('Unknown message type:', message.type);
+            }
+          } catch (err) {
+            console.error('Error parsing WebSocket message:', err);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+
+        ws.onclose = () => {
+          console.log('WebSocket disconnected');
+          setWsConnected(false);
+          
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+          }
+
+          // Attempt to reconnect after 3 seconds
+          reconnectTimeout = setTimeout(() => {
+            console.log('Attempting to reconnect WebSocket...');
+            connectWebSocket();
+          }, 3000);
+        };
+      } catch (err) {
+        console.error('Error creating WebSocket:', err);
+      }
+    };
+
+    connectWebSocket();
+
+    // Cleanup on unmount
+    return () => {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, []);
 
   // Initialize app data
   useEffect(() => {
@@ -329,6 +443,13 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background text-foreground theme-transition">
+      {/* WebSocket Connection Indicator */}
+      {!wsConnected && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-black text-center py-2 text-sm font-comic">
+          ⚠️ Live updates disconnected. Reconnecting...
+        </div>
+      )}
+
       {/* Header with navigation */}
       <header className="fixed top-0 left-0 w-full z-40 bg-card/90 backdrop-blur-sm border-b border-border theme-transition">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
