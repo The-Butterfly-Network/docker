@@ -28,7 +28,7 @@ from auth import router as auth_router, get_current_user, oauth2_scheme
 from subsystems import (
     get_subsystems, get_member_tags, get_members_by_subsystem, 
     update_member_tags, add_member_tag, remove_member_tag,
-    validate_subsystem_tag, initialize_default_subsystems
+    initialize_default_subsystems
 )
 from models import (
     UserCreate, UserResponse, UserUpdate, MentalState, DynamicCofrontCreate, 
@@ -723,14 +723,6 @@ async def update_member_tag_list(
         raise HTTPException(status_code=403, detail="Admin privileges required")
     
     try:
-        # Validate all tags
-        for tag in tags:
-            if not validate_subsystem_tag(tag):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid tag '{tag}'. Must be one of: pets, valorant, vocaloids, host"
-                )
-        
         # Update the member's tags
         success = update_member_tags(member_identifier, tags)
         
@@ -762,13 +754,6 @@ async def add_single_member_tag(
         raise HTTPException(status_code=403, detail="Admin privileges required")
     
     try:
-        # Validate tag
-        if not validate_subsystem_tag(tag):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid tag '{tag}'. Must be one of: pets, valorant, vocaloids, host"
-            )
-        
         # Add the tag
         success = add_member_tag(member_identifier, tag)
         

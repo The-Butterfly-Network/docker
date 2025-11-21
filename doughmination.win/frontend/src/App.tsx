@@ -15,7 +15,6 @@ import StatusManager from "./pages/admin/is/StatusManager";
 import SwitchManager from "./pages/admin/is/SwitchManager";
 import MentalHealthManager from "./pages/admin/is/MentalHealthManager";
 import Metrics from "./pages/admin/Metrics";
-import SwitchManager from "./pages/admin/is/SwitchManager";
 import TagManager from "./pages/admin/is/TagManager";
 import Endpoints from "./pages/admin/is/Endpoints";
 import UserManager from "./pages/admin/is/UserManager";
@@ -43,14 +42,14 @@ const App = () => (
               <StatusManager />
             </ProtectedRoute>
           } />
-          <Route path="/admin/switch" element={
-            <ProtectedRoute adminRequired={true}>
-              <SwitchManager />
-            </ProtectedRoute>
-          } />
           <Route path="/admin/mental" element={
             <ProtectedRoute adminRequired={true}>
               <MentalHealthManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/switch" element={
+            <ProtectedRoute adminRequired={true}>
+              <SwitchManager />
             </ProtectedRoute>
           } />
           <Route path="/admin/tags" element={

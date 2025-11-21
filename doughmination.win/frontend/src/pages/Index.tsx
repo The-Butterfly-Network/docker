@@ -360,19 +360,17 @@ export default function Index() {
             {loggedIn ? (
               <>
                 {isAdmin && (
-                  <>
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/admin/dashboard" className="font-comic">
                       Admin Panel
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/admin/status" className="font-comic">
-                      Status Manager
-                    </Link>
-                  </Button>
-                  </>
                 )}
+                <Button variant='outline' size='sm' asChild>
+                  <Link to="/admin/metrics" className='font-comic'>
+                    Metrics
+                  </Link>
+                </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/admin/user" className="font-comic">
                     Profile
