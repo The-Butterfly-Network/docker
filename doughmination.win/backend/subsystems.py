@@ -18,14 +18,14 @@ DEFAULT_SUBSYSTEMS = []
 # Default member tag assignments
 DEFAULT_MEMBER_TAGS = {
     "Jinx": ["Arcane"],
-    "V": ["Arcane"],
+    "Vi": ["Arcane"],
 
     "Onyx": ["Cat"],
     "Pyzer": ["Cat"],
     "Pyzen": ["Cat"],
 
     "JS": ["Cyberpunk"],
-    "Vi": ["Cyberpunk"],
+    "V": ["Cyberpunk"],
     "Judy": ["Cyberpunk"],
 
     "Marin": ["DUD"],
