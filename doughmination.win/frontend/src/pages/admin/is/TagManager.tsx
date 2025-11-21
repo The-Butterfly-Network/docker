@@ -1,0 +1,1 @@
+// Add a manager page to add, remove, and edit tags on a front.

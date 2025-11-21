@@ -1,1 +1,1 @@
-// Switch manager to be migrated from Admin Dashboard
+// Mental Health Manger to be migrated from Admin Dashboard

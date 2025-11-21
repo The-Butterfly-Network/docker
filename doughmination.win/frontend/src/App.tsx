@@ -14,6 +14,11 @@ import UserEdit from "./pages/admin/UserEdit";
 import StatusManager from "./pages/admin/is/StatusManager";
 import SwitchManager from "./pages/admin/is/SwitchManager";
 import MentalHealthManager from "./pages/admin/is/MentalHealthManager";
+import Metrics from "./pages/admin/Metrics";
+import SwitchManager from "./pages/admin/is/SwitchManager";
+import TagManager from "./pages/admin/is/TagManager";
+import Endpoints from "./pages/admin/is/Endpoints";
+import UserManager from "./pages/admin/is/UserManager";
 import { Switch } from "@radix-ui/react-switch";
 
 const queryClient = new QueryClient();
@@ -48,9 +53,29 @@ const App = () => (
               <MentalHealthManager />
             </ProtectedRoute>
           } />
+          <Route path="/admin/tags" element={
+            <ProtectedRoute adminRequired={true}>
+              <TagManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/endpoints" element={
+            <ProtectedRoute adminRequired={true}>
+              <Endpoints />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute adminRequired={true}>
+              <UserManager />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/user" element={
             <ProtectedRoute adminRequired={false}>
               <UserProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/metrics" element={
+            <ProtectedRoute adminRequired={false}>
+              <Metrics />
             </ProtectedRoute>
           } />
           <Route path="/admin/user/edit" element={
