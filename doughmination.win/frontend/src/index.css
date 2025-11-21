@@ -712,3 +712,81 @@
 .theme-transition {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+/* ============================================================================
+   SCROLLBAR STYLING - THEME AWARE (with hardcoded colors)
+   Add this to the END of your index.css file
+   ============================================================================ */
+
+/* ===== LIGHT THEME SCROLLBARS (Bubblegum Pink) ===== */
+:root ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+:root ::-webkit-scrollbar-track {
+  background: hsl(220, 15%, 95%); /* Light grey background */
+  border-radius: 6px;
+}
+
+:root ::-webkit-scrollbar-thumb {
+  background: hsl(330, 85%, 70%); /* Bubblegum pink */
+  border-radius: 6px;
+  border: 2px solid hsl(220, 15%, 95%);
+  transition: background-color 0.2s ease;
+}
+
+:root ::-webkit-scrollbar-thumb:hover {
+  background: hsl(330, 85%, 60%); /* Darker pink on hover */
+}
+
+:root ::-webkit-scrollbar-thumb:active {
+  background: hsl(330, 85%, 50%); /* Even darker when clicking */
+}
+
+/* Firefox - Light Theme */
+:root {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(330, 85%, 70%) hsl(220, 15%, 95%);
+}
+
+/* ===== DARK THEME SCROLLBARS (Neon Green) ===== */
+.dark ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: hsl(0, 0%, 8%); /* Charcoal black background */
+  border-radius: 6px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(120, 100%, 35%); /* Darker green (easier on eyes) */
+  border-radius: 6px;
+  border: 2px solid hsl(0, 0%, 8%);
+  transition: background-color 0.2s ease;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(120, 100%, 45%); /* Brighter green on hover */
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background: hsl(120, 100%, 50%); /* Full neon green when clicking */
+}
+
+/* Firefox - Dark Theme */
+.dark {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(120, 100%, 35%) hsl(0, 0%, 8%);
+}
+
+/* Ensure scrollbar transitions smoothly when switching themes */
+::-webkit-scrollbar-thumb {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+::-webkit-scrollbar-track {
+  transition: background-color 0.3s ease;
+}
